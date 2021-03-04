@@ -1,0 +1,12 @@
+
+Task
+  validation
+    is valid with all attributes
+    is invalid without title
+    is invalid without status
+    is invalid with a duplicate title
+    is valid with another title
+
+Finished in 0.11854 seconds (files took 0.73219 seconds to load)
+5 examples, 0 failures
+
