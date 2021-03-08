@@ -14,8 +14,6 @@ gem 'sorcery'
 
 group :development, :test do
   gem 'byebug', platforms: %i[mri mingw x64_mingw]
-  gem 'capybara'
-  gem 'webdrivers'
   gem 'factory_bot_rails'
   gem 'rspec-rails', '~> 4.0.2'
 end
@@ -32,6 +30,11 @@ group :development do
   gem 'pry-doc'
   gem 'rubocop'
   gem 'rails_best_practices'
+end
+
+group :test do
+  gem 'capybara'
+  gem 'webdrivers'
 end
 
 gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]

@@ -1,43 +1,47 @@
 require 'rails_helper'
 
-RSpec.describe "Users", type: :system do
-  let(:new_user) { build(:user) }
+RSpec.describe 'Users', type: :system do
   let(:user) { create(:user) }
-  let(:other_user) { create(:user, email: 'other_user@example.com') }
-  subject { page }
 
   describe 'ログイン前' do
     describe 'ユーザー新規登録' do
       context 'フォームの入力値が正常' do
         it 'ユーザーの新規作成が成功する' do
-          visit sign_up_path
-          fill_in 'Email', with: new_user.email
-          fill_in 'Password', with: new_user.password
-          fill_in 'Password confirmation', with: new_user.password
+          visit new_user_path
+          fill_in 'Email', with: 'email@example.com'
+          fill_in 'Password', with: 'password'
+          fill_in 'Password confirmation', with: 'password'
           click_button 'SignUp'
-          is_expected.to have_selector('#notice', text: 'User was successfully created.')
+          expect(page).to have_content 'User was successfully created.'
+          expect(current_path).to eq login_path
         end
       end
 
       context 'メールアドレスが未入力' do
         it 'ユーザーの新規作成が失敗する' do
-          visit sign_up_path
+          visit new_user_path
           fill_in 'Email', with: ''
-          fill_in 'Password', with: new_user.password
-          fill_in 'Password confirmation', with: new_user.password
+          fill_in 'Password', with: 'password'
+          fill_in 'Password confirmation', with: 'password'
           click_button 'SignUp'
-          is_expected.to have_selector('#error_explanation', text: "Email can't be blank")
+          expect(page).to have_content '1 error prohibited this user from being saved'
+          expect(page).to have_content "Email can't be blank"
+          expect(current_path).to eq users_path
         end
       end
 
       context '登録済のメールアドレスを使用' do
         it 'ユーザーの新規作成が失敗する' do
-          visit sign_up_path
-          fill_in 'Email', with: other_user.email
-          fill_in 'Password', with: new_user.password
-          fill_in 'Password confirmation', with: new_user.password
+          existed_user = create(:user)
+          visit new_user_path
+          fill_in 'Email', with: existed_user.email
+          fill_in 'Password', with: 'password'
+          fill_in 'Password confirmation', with: 'password'
           click_button 'SignUp'
-          expect(page).to have_content "Email has already been taken"
+          expect(page).to have_content '1 error prohibited this user from being saved'
+          expect(page).to have_content 'Email has already been taken'
+          expect(current_path).to eq users_path
+          expect(page).to have_field 'Email', with: existed_user.email
         end
       end
     end
@@ -46,26 +50,26 @@ RSpec.describe "Users", type: :system do
       context 'ログインしていない状態' do
         it 'マイページへのアクセスが失敗する' do
           visit user_path(user)
-          expect(page).to have_content 'Login required'
+          expect(page).to have_content('Login required')
+          expect(current_path).to eq login_path
         end
       end
     end
   end
 
   describe 'ログイン後' do
-    before do
-      login(user)
-    end
+    before { login_as(user) }
 
     describe 'ユーザー編集' do
       context 'フォームの入力値が正常' do
         it 'ユーザーの編集が成功する' do
           visit edit_user_path(user)
-          fill_in 'Email', with: 'edited_email@example.com'
-          fill_in 'Password', with: 'password'
-          fill_in 'Password confirmation', with: 'password'
+          fill_in 'Email', with: 'update@example.com'
+          fill_in 'Password', with: 'update_password'
+          fill_in 'Password confirmation', with: 'update_password'
           click_button 'Update'
-          expect(page).to have_content 'User was successfully updated.'
+          expect(page).to have_content('User was successfully updated.')
+          expect(current_path).to eq user_path(user)
         end
       end
 
@@ -76,24 +80,32 @@ RSpec.describe "Users", type: :system do
           fill_in 'Password', with: 'password'
           fill_in 'Password confirmation', with: 'password'
           click_button 'Update'
-          expect(page).to have_content "Email can't be blank"
+          expect(page).to have_content('1 error prohibited this user from being saved')
+          expect(page).to have_content("Email can't be blank")
+          expect(current_path).to eq user_path(user)
         end
       end
 
       context '登録済のメールアドレスを使用' do
         it 'ユーザーの編集が失敗する' do
           visit edit_user_path(user)
+          other_user = create(:user)
           fill_in 'Email', with: other_user.email
           fill_in 'Password', with: 'password'
           fill_in 'Password confirmation', with: 'password'
           click_button 'Update'
-          expect(page).to have_content "Email has already been taken"
+          expect(page).to have_content('1 error prohibited this user from being saved')
+          expect(page).to have_content('Email has already been taken')
+          expect(current_path).to eq user_path(user)
         end
       end
+
       context '他ユーザーの編集ページにアクセス' do
         it '編集ページへのアクセスが失敗する' do
+          other_user = create(:user)
           visit edit_user_path(other_user)
           expect(page).to have_content 'Forbidden access.'
+          expect(current_path).to eq user_path(user)
         end
       end
     end
@@ -101,11 +113,14 @@ RSpec.describe "Users", type: :system do
     describe 'マイページ' do
       context 'タスクを作成' do
         it '新規作成したタスクが表示される' do
-          visit new_task_path
-          fill_in 'Title', with: 'task_title'
-          click_button 'Create Task'
+          create(:task, title: 'test_title', status: :doing, user: user)
           visit user_path(user)
-          expect(page).to have_content 'task_title'
+          expect(page).to have_content('You have 1 task.')
+          expect(page).to have_content('test_title')
+          expect(page).to have_content('doing')
+          expect(page).to have_link('Show')
+          expect(page).to have_link('Edit')
+          expect(page).to have_link('Destroy')
         end
       end
     end
